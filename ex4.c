@@ -1,3 +1,7 @@
+
+
+
+
 #include <stdio.h>
 #include <string.h>
 
@@ -58,8 +62,13 @@ int task5SolveSudokuImplementation(int[SUDOKU_GRID_SIZE][SUDOKU_GRID_SIZE]);
 
 int readTerms(char[][LONGEST_TERM+1], int, char[]);
 void printSudoku(int[SUDOKU_GRID_SIZE][SUDOKU_GRID_SIZE]);
-
-
+int solveZipHelper(int[ZIP_MAX_GRID_SIZE][ZIP_MAX_GRID_SIZE],char[ZIP_MAX_GRID_SIZE][ZIP_MAX_GRID_SIZE],int,int,int,int,int,int,int);
+int checkRow(int[SUDOKU_GRID_SIZE][SUDOKU_GRID_SIZE],int,int,int);
+int checkCol(int[SUDOKU_GRID_SIZE][SUDOKU_GRID_SIZE],int,int,int);
+int checkBox(int[SUDOKU_GRID_SIZE][SUDOKU_GRID_SIZE],int,int,int,int);
+int isValid(int[SUDOKU_GRID_SIZE][SUDOKU_GRID_SIZE],int,int,int);
+int solveSudokuHelper(int[SUDOKU_GRID_SIZE][SUDOKU_GRID_SIZE],int,int);
+int tryNumber(int[SUDOKU_GRID_SIZE][SUDOKU_GRID_SIZE],int,int);
 
 /******************************
 ********** MAIN MENU **********
@@ -246,6 +255,65 @@ int readTerms(char terms[][LONGEST_TERM+1], int maxNumOfTerms, char type[]){
     return termsCount;
 }
 
+int checkRow(int board[SUDOKU_GRID_SIZE][SUDOKU_GRID_SIZE],int row,int num,int col){
+    if (col>=SUDOKU_GRID_SIZE)
+        return 1;
+    if (board[row][col]==num)
+        return 0;
+    return checkRow(board,row,num,col+1);
+}
+
+int checkCol(int board[SUDOKU_GRID_SIZE][SUDOKU_GRID_SIZE],int col,int num,int row){
+    if (row>=SUDOKU_GRID_SIZE)
+        return 1;
+    if (board[row][col]==num)
+        return 0;
+    return checkCol(board,col,num,row+1);
+}
+
+int checkBox(int board[SUDOKU_GRID_SIZE][SUDOKU_GRID_SIZE],int startRow,int startCol,int num,int pos){
+    if (pos>=9)
+        return 1;
+    int row=startRow+pos/3;
+    int col=startCol+pos%3;
+    if (board[row][col]==num)
+        return 0;
+    return checkBox(board,startRow,startCol,num,pos+1);
+}
+
+int isValid(int board[SUDOKU_GRID_SIZE][SUDOKU_GRID_SIZE],int row,int col,int num){
+    int boxStartRow=(row/3)*3;
+    int boxStartCol=(col/3)*3;
+    return checkRow(board,row,num,0)&&
+           checkCol(board,col,num,0)&&
+           checkBox(board,boxStartRow,boxStartCol,num,0);
+}
+
+int tryNumber(int board[SUDOKU_GRID_SIZE][SUDOKU_GRID_SIZE],int pos,int num){
+    int row=pos/9;
+    int col=pos%9;
+
+    if (num>9)
+        return 0;
+    if (isValid(board,row,col,num)){
+        board[row][col]=num;
+        if (solveSudokuHelper(board, pos + 1, 1))
+            return 1;
+        board[row][col]=0;
+    }
+    return tryNumber(board,pos,num+1);
+}
+
+int solveSudokuHelper(int board[SUDOKU_GRID_SIZE][SUDOKU_GRID_SIZE],int pos,int num){
+    if (pos>=81)
+        return 1;
+    int row=pos/9;
+    int col=pos%9;
+
+    if (board[row][col]!=0)
+        return solveSudokuHelper(board, pos + 1, 1);
+    return tryNumber(board, pos, num);
+}
 
 void printSudoku(int board[SUDOKU_GRID_SIZE][SUDOKU_GRID_SIZE])
 {
@@ -267,39 +335,135 @@ void printSudoku(int board[SUDOKU_GRID_SIZE][SUDOKU_GRID_SIZE])
             printf("+-------+-------+-------+\n");
     }
 }
+int solveZipHelper(int board[ZIP_MAX_GRID_SIZE][ZIP_MAX_GRID_SIZE],
+                   char solution[ZIP_MAX_GRID_SIZE][ZIP_MAX_GRID_SIZE],
+                   int size,int row,int col,int visited,int nextRequired,int highest,int dir){
 
+    if (visited==size*size){
+        if (board[row][col]==highest){
+            solution[row][col]='X';
+            return 1;
+        }
+        return 0;
+    }
+
+    if (dir>=4){
+        return 0;
+    }
+
+    int newR,newC;
+    char dirChar;
+
+    if (dir==0){
+        newR=row-1;
+        newC=col;
+        dirChar='U';
+    } else if (dir==1){
+        newR=row+1;
+        newC=col;
+        dirChar='D';
+    } else if (dir==2){
+        newR=row;
+        newC=col-1;
+        dirChar='L';
+    } else {
+        newR=row;
+        newC=col+1;
+        dirChar='R';
+    }
+    if (newR>=0&&newR<size&&newC>=0&&newC<size&&solution[newR][newC]==0){
+
+        int newNextRequired=nextRequired;
+        int validMove=1;
+
+        if (board[newR][newC]>0){
+            if (board[newR][newC]!=nextRequired){
+                validMove=0;
+            } else {
+                newNextRequired++;
+            }
+        }
+
+        if (validMove){
+            solution[row][col]=dirChar;
+            if (solveZipHelper(board,solution,size,newR,newC,visited+1,newNextRequired,highest,0)){
+                return 1;
+            }
+            solution[row][col]=0;
+        }
+    }
+    return solveZipHelper(board,solution,size,row,col,visited,nextRequired,highest,dir+1);
+}
 /***************************
 *********** TODO ***********
 ****************************/
 
 
 void task1ReversePhraseImplementation(){
+     static int printed=0;
 
+    if (!printed){
+        printed=1;
+        printf("The reversed phrase is:\n");
+    }
+    char c=getchar();
+    if (c!='\n' && c!=EOF) {
+        task1ReversePhraseImplementation();
+        putchar(c);
+    }
+    else printed=0;
 }
 
 
-int task2CheckPalindromeImplementation(int length)
-{
-    return 0;
+int task2CheckPalindromeImplementation(int length){
+    if (length<=0){
+        return 1;
+    }
+    if (length==1){
+        getchar();
+        return 1;
+    }
+    char first=getchar();
+    int middle=task2CheckPalindromeImplementation(length - 2);
+    char last=getchar();
+
+    return (first==last)&&middle;
 }
 
 
 void task3GenerateSentencesImplementation(char subjects[][LONGEST_TERM+1], int subjectsCount,
                                             char verbs[][LONGEST_TERM+1], int verbsCount,
-                                            char objects[][LONGEST_TERM+1], int objectsCount){
+                                            char objects[][LONGEST_TERM+1], int objectsCount) {
+    static int subj=0,verb=0,obj=0,num=1;
 
-}
+    if (subj>=subjectsCount){
+        subj=0;
+        verb=0;
+        obj=0;
+        num=1;
+        return;
+    }
 
+    printf("%d. %s %s %s\n",num++,subjects[subj],verbs[verb],objects[obj]);
+    obj++;
+    if (obj>=objectsCount) {
+        obj=0;
+        verb++;
+        if (verb>=verbsCount){
+            verb=0;
+            subj++;
+        }
+    }
+        task3GenerateSentencesImplementation(subjects,subjectsCount,verbs,verbsCount,objects,objectsCount);
+    }
 
 int task4SolveZipBoardImplementation(int board[ZIP_MAX_GRID_SIZE][ZIP_MAX_GRID_SIZE],
                                     char solution[ZIP_MAX_GRID_SIZE][ZIP_MAX_GRID_SIZE],
-                                    int size, int startR, int startC, int highest)
-{
-    return 0;
+                                    int size, int startR, int startC, int highest){
+    return solveZipHelper(board,solution,size,startR,startC,1,2,highest,0);
 }
 
 
-int task5SolveSudokuImplementation(int board[SUDOKU_GRID_SIZE][SUDOKU_GRID_SIZE])
-{
-    return 0;
+int task5SolveSudokuImplementation(int board[SUDOKU_GRID_SIZE][SUDOKU_GRID_SIZE]){
+    return solveSudokuHelper(board,0,1);
 }
