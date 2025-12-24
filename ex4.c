@@ -1,6 +1,6 @@
-
-
-
+/* Name: Tawfeek wattad
+   ID: 211438973
+   Assignment: ex3*/
 
 #include <stdio.h>
 #include <string.h>
